@@ -982,6 +982,7 @@ do -- the main scope
 			local newObject
 			if Group.getByName(event) then
 				newObject = Group.getByName(event)
+				objType = "group"
 			elseif StaticObject.getByName(event) then
 				newObject = StaticObject.getByName(event)
 				objType = "static"
@@ -1412,7 +1413,8 @@ do -- the main scope
 		-- object is static object or group.
 		-- call dbUpdate to get the table
 		
-		local tbl = dbUpdate(object)
+		local tbl = {}
+		tbl.data = dbUpdate(object)
 		if tbl then
 			local res = writeDBTables(tbl)
 			if not res then
