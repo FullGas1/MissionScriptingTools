@@ -1423,8 +1423,35 @@ do -- the main scope
 		end
 		-- call writeDBTables with that table. 
 	end
-	
-	local function updateDBTables()
+	------------------------------------------------------------------------------------------
+	function mist.updateMISTDBsDynSpwans(params, t)		-- Update mist.DBs tables with planes & helos dynamic slots spwaned
+														-- to allow dynamic slots to access MIST functions
+		if t == nil then t = timer.getTime() end
+		
+		local table1 = {}
+		local table2 = {}
+		
+		table1  = mist.mergeTables(coalition.getGroups(1,0), coalition.getGroups(2,0))	-- detect red & blue planes
+    	table1  = mist.mergeTables(table1, coalition.getGroups(1,1))					-- detect red helos
+    	table1  = mist.mergeTables(table1, coalition.getGroups(2,1))					-- detect blue helos
+		
+		local grps = {}
+		for i=1, #table1 do
+			grps[#grps+1] = table1[i]:getName()
+		end
+		
+		if grps ~= nil then
+			for k,v in pairs(grps) do
+				--trigger.action.outText(v,5)
+				mist.forceAddToDB(v)
+			end
+		end
+		timer.scheduleFunction(mist.updateMISTDBsDynSpwans, nil, t + 5)
+	end
+	--mist.updateMISTDBsDynSpwans(nil, timer.getTime())   -- run need be located in mist.init()
+end
+
+local function updateDBTables()
 		local i = #writeGroups
 
 		local savesPerRun = math.ceil(i/10)
@@ -1683,8 +1710,10 @@ do -- the main scope
 		-- call main the first time therafter it reschedules itself.
 		mist.main()
 		--log:msg('MIST version $1.$2.$3 loaded', mist.majorVersion, mist.minorVersion, mist.build)
-        
-        mist.scheduleFunction(verifyDB, {}, timer.getTime() + 1)
+	
+    mist.updateMISTDBsDynSpwans(nil, timer.getTime())   
+	
+    mist.scheduleFunction(verifyDB, {}, timer.getTime() + 1)
 		return
 	end
 
