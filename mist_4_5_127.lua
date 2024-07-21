@@ -1428,12 +1428,10 @@ do -- the main scope
 														-- to allow dynamic slots to access MIST functions
 		if t == nil then t = timer.getTime() end
 		
-		local table1 = {}
-		local table2 = {}
-		
+		local table1 = {}		
 		table1  = mist.mergeTables(coalition.getGroups(1,0), coalition.getGroups(2,0))	-- detect red & blue planes
-    	table1  = mist.mergeTables(table1, coalition.getGroups(1,1))					-- detect red helos
-    	table1  = mist.mergeTables(table1, coalition.getGroups(2,1))					-- detect blue helos
+    table1  = mist.mergeTables(table1, coalition.getGroups(1,1))					-- detect red helos
+    table1  = mist.mergeTables(table1, coalition.getGroups(2,1))					-- detect blue helos
 		
 		local grps = {}
 		for i=1, #table1 do
@@ -1442,7 +1440,6 @@ do -- the main scope
 		
 		if grps ~= nil then
 			for k,v in pairs(grps) do
-				--trigger.action.outText(v,5)
 				mist.forceAddToDB(v)
 			end
 		end
