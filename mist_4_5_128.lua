@@ -35,7 +35,7 @@ mist = {}
 -- don't change these
 mist.majorVersion = 4
 mist.minorVersion = 5
-mist.build = 127
+mist.build = 128
 
 -- forward declaration of log shorthand
 local log
@@ -1073,7 +1073,9 @@ do -- the main scope
 					newTable.units[unitId].type = unitData:getTypeName()
 					newTable.units[unitId].unitId = tonumber(unitData:getID())
 					
-					if unitData:getPlayerName() ~= "" and not mist.DBs.MEunitsByName[newTable.units[unitId].unitName] then
+					local pName = unitData:getPlayerName()
+					--log:warn("'$1'", pName)
+					if (pName and pName ~= "") and not mist.DBs.MEunitsByName[newTable.units[unitId].unitName] then
 						newTable.dynamicSlot = timer.getTime()
 					end
 
@@ -1255,8 +1257,12 @@ do -- the main scope
                     if stillExists == true and (updated == true or not mist.DBs.groupsByName[name]) then
                         --dbLog:info('Get Table')
                         local dbData =  dbUpdate(name, gData.type, staticGroupName)
-                        if dbData and type(dbData) == 'table' then 
-                            writeGroups[#writeGroups+1] = {data = dbData, isUpdated = updated}
+                        if dbData and type(dbData) == 'table'  then 
+                            if dbData.name then
+								writeGroups[#writeGroups+1] = {data = dbData, isUpdated = updated}
+							else
+								dbLog:warn("dbUpdate failed to populate data: $1  $2   $3", name, gData.type, gData)
+							end
                         end
                     end
                     -- Work done, so remove
@@ -1276,6 +1282,11 @@ do -- the main scope
 		--dbLog:info(newTable)
 		
 		local state = 0
+		if not newTable.name then
+			dbLog:warn("Failed to add to database; sufficent data missing $1",  newTable)
+			return false
+		end
+		
 		if updateChecker[newTable.name] then
 			dbLog:warn("Failed to add to database: $1. Stopped at state: $2", newTable.name, updateChecker[newTable.name])
 			return false
@@ -1432,7 +1443,8 @@ do -- the main scope
 		if i > 0 then
 			--dbLog:info('updateDBTables: $1', #writeGroups)
 			
-			for x = 1, i do 
+			for x = i, 1, -1 do 
+				--dbLog:info(x)
 				local res = writeDBTables(writeGroups[x])
 				if res and res == true then
 					--dbLog:info('result: complete')
@@ -1442,6 +1454,7 @@ do -- the main scope
 				end
 			end
 			if x%savesPerRun == 0 then
+				--dbLog:info("yield")
 				coroutine.yield()
 			end
 			if timer.getTime() > lastUpdateTime then
@@ -1764,7 +1777,7 @@ do -- the main scope
 	function mist.dynAddStatic(n)
         
         local newObj = mist.utils.deepCopy(n)
-		log:warn(newObj)
+		--log:warn(newObj)
 		if newObj.units and newObj.units[1] then -- if its mist format
 			for entry, val in pairs(newObj.units[1]) do
 				if newObj[entry] and newObj[entry] ~= val or not newObj[entry] then
@@ -5230,7 +5243,7 @@ do -- mist.util scope
 
     function mist.utils.getHeadingPoints(point1, point2, north) -- sick of writing this out. 
         if north then 
-			local p1 = mist.utils.get3DDist(point1)
+			local p1 = mist.utils.makeVec3(point1)
             return mist.utils.getDir(mist.vec.sub(mist.utils.makeVec3(point2), p1), p1)
         else
             return mist.utils.getDir(mist.vec.sub(mist.utils.makeVec3(point2), mist.utils.makeVec3(point1))) 
@@ -7839,7 +7852,7 @@ do
         if type(id) == 'table' then 
             for ind, val in pairs(id) do
 				local r
-				if val.markId then
+				if type(val) == "table" and val.markId then
 					r = val.markId
 				else
 					r = getMarkId(val)
